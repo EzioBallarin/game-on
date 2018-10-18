@@ -1,40 +1,14 @@
 <?php
 
-function go_display_admin_bar () {
+function go_display_admin_bar() {
 	if ( go_return_options( 'go_admin_bar_display_switch' ) == 'On' ) {
 		return true;
 	}
 }
 
-function go_admin_bar () {
-	global $wpdb;
-	global $current_user_id;
+function go_admin_bar() {
 	global $wp_admin_bar;
-	global $current_points; //users current experience
-	global $current_currency; //users current money
-	global $current_rank;
-	global $next_rank_points;
-	global $current_rank_points;
-	$dom = ( $next_rank_points - $current_rank_points );
-	$rng = ( $current_points - $current_rank_points);
-	$current_bonus_currency = go_return_bonus_currency( get_current_user_id() );
-	$current_penalty = go_return_penalty( get_current_user_id() );
-	$current_minutes = go_return_minutes( get_current_user_id() );
-	if ( $dom <= 0 ) {
-		$dom = 1;
-	}
-	$ranks_output = go_update_ranks( $current_user_id, $current_points, false );
-	$percentage = $rng / $dom * 100;
-	if ( $percentage <= 0 ) { 
-		$percentage = 0;
-	} elseif ( $percentage >= 100 ) {
-		$percentage = 100;
-	}
-	
-	$color = barColor( $current_bonus_currency, $current_penalty );
-	
-	$wp_admin_bar->remove_menu( 'wp-logo' );
-	
+
 	if ( ! is_user_logged_in() ) {
 		$wp_admin_bar->add_node(
 			array(
@@ -43,32 +17,92 @@ function go_admin_bar () {
 				'href' => wp_login_url()
 			)
 		);
-	}
-	
-	if ( is_admin_bar_showing() && is_user_logged_in() ) {
-		$is_admin = false;
-		$user_obj = get_user_by( 'id', $current_user_id );
-		$user_roles = $user_obj->roles;
-		if ( !empty( $user_roles ) ) {
-			foreach ( $user_roles as $role ) {
-				if ( $role === "administrator" ) {
-					$is_admin = true;
-					break;
-				}
-			}
+	} else if ( is_admin_bar_showing() && is_user_logged_in() ) {
+		$user_id = get_current_user_id();
+		
+		// the user's current amount of experience (points)
+		$go_current_points = go_return_points( $user_id );
+		
+		// the user's current amount of currency
+		$go_current_currency = go_return_currency( $user_id );
+
+		// the user's current amount of bonus currency,
+		// also used for coloring the admin bar
+		$go_current_bonus_currency = go_return_bonus_currency( $user_id );
+
+		// the user's current amount of penalties,
+		// also used for coloring the admin bar
+		$go_current_penalty = go_return_penalty( $user_id );
+
+		// the user's current amount of minutes
+		$go_current_minutes = go_return_minutes( $user_id );
+
+		$rank = go_get_rank( $user_id );
+		$current_rank = $rank['current_rank'];
+		$current_rank_points = $rank['current_rank_points'];
+		$next_rank = $rank['next_rank'];
+		$next_rank_points = $rank['next_rank_points'];
+
+		$go_option_ranks = get_option( 'go_ranks' );
+		$points_array = $go_option_ranks['points'];
+
+		/*
+		 * Here we are referring to last element manually,
+		 * since we don't want to modifiy
+		 * the arrays with the array_pop function.
+		 */
+		$max_rank_index = count( $points_array ) - 1;
+		$max_rank_points = (int) $points_array[ $max_rank_index ];
+
+		if ( null !== $next_rank_points ) {
+			$rank_threshold_diff = $next_rank_points - $current_rank_points;
+		} else {
+			$rank_threshold_diff = 1;
 		}
+		$pts_to_rank_threshold = $go_current_points - $current_rank_points;
+
+		if ( $max_rank_points === $current_rank_points ) {
+			$prestige_name = go_return_options( 'go_prestige_name' );
+			$pts_to_rank_up_str = $prestige_name;
+		} else {
+			$pts_to_rank_up_str = "{$pts_to_rank_threshold} / {$rank_threshold_diff}";
+		}
+
+		$percentage = $pts_to_rank_threshold / $rank_threshold_diff * 100;
+		if ( $percentage <= 0 ) { 
+			$percentage = 0;
+		} else if ( $percentage >= 100 ) {
+			$percentage = 100;
+		}
+		
+		$color = barColor( $go_current_bonus_currency, $go_current_penalty );
+		
+		$wp_admin_bar->remove_menu( 'wp-logo' );
+
+		$is_admin = go_user_is_admin( $user_id );
 	
 		$wp_admin_bar->add_node( 
 			array(
-				'title' => '<div style="padding-top:5px;"><div id="go_admin_bar_progress_bar_border"><div id="points_needed_to_level_up" class="go_admin_bar_text">'.( $rng).'/'.( $dom).'</div><div id="go_admin_bar_progress_bar" class="progress_bar" style="width: '.$percentage.'%; background-color: '.$color.' ;"></div></div></div>',
-				'href' => '#',
 				'id' => 'go_info',
+				'title' => 
+					'<div style="padding-top:5px;">'.
+						'<div id="go_admin_bar_progress_bar_border">'.
+							'<div id="go_admin_bar_progress_bar" class="progress_bar" '.
+								'style="width: '.$percentage.'%; background-color: '.$color.' ;">'.
+							'</div>'.
+							'<div id="points_needed_to_level_up" class="go_admin_bar_text">'.
+								$pts_to_rank_up_str.
+							'</div>'.
+						'</div>'.
+					'</div>',
+				'href' => '#',
 			) 
 		);
 		
 		$wp_admin_bar->add_node( 
 			array(
-				'title' => '<div id="go_admin_bar_rank">'.go_return_clean_rank( $current_user_id ).'</div>',
+				'id' => 'go_rank',
+				'title' => '<div id="go_admin_bar_rank">' . $current_rank . '</div>',
 				'href' => '#',
 				'parent' => 'go_info',
 			) 
@@ -76,7 +110,13 @@ function go_admin_bar () {
 		
 		$wp_admin_bar->add_node( 
 			array(
-				'title' => '<div id="go_admin_bar_points">'.go_return_options( 'go_points_name' ).': '.go_display_points( $current_points ).'</div>',
+				'id' => 'go_points',
+				'title' => '<div id="go_admin_bar_points">' .
+					go_display_longhand_currency(
+						'points',
+						$go_current_points
+					) .
+					'</div>',
 				'href' => '#',
 				'parent' => 'go_info',
 			) 
@@ -84,7 +124,13 @@ function go_admin_bar () {
 		
 		$wp_admin_bar->add_node( 
 			array(
-				'title' => '<div id="go_admin_bar_currency">'.go_return_options( 'go_currency_name' ).': '.go_display_currency( $current_currency ).'</div>',
+				'id' => 'go_currency',
+				'title' => '<div id="go_admin_bar_currency">' .
+					go_display_longhand_currency(
+						'currency',
+						$go_current_currency
+					) .
+					'</div>',
 				'href' => '#',
 				'parent' => 'go_info',
 			) 
@@ -92,7 +138,13 @@ function go_admin_bar () {
 		
 		$wp_admin_bar->add_node( 
 			array(
-				'title' => '<div id="go_admin_bar_bonus_currency">'.go_return_options( 'go_bonus_currency_name' ).': '.go_display_bonus_currency( $current_bonus_currency ).'</div>',
+				'id' => 'go_bonus_currency',
+				'title' => '<div id="go_admin_bar_bonus_currency">' .
+					go_display_longhand_currency(
+						'bonus_currency',
+						$go_current_bonus_currency
+					) .
+					'</div>',
 				'href' => '#',
 				'parent' => 'go_info',
 			) 
@@ -100,7 +152,13 @@ function go_admin_bar () {
 		
 		$wp_admin_bar->add_node( 
 			array(
-				'title' => '<div id="go_admin_bar_penalty">'.go_return_options( 'go_penalty_name' ).': '.go_display_penalty( $current_penalty ).'</div>',
+				'id' => 'go_penalty',
+				'title' => '<div id="go_admin_bar_penalty">' .
+					go_display_longhand_currency(
+						'penalty',
+						$go_current_penalty
+					) .
+					'</div>',
 				'href' => '#',
 				'parent' => 'go_info',
 			) 
@@ -108,7 +166,13 @@ function go_admin_bar () {
 		
 		$wp_admin_bar->add_node( 
 			array(
-				'title' => '<div id="go_admin_bar_minutes">'.go_return_options( 'go_minutes_name' ).': '.go_display_minutes( $current_minutes ).'</div>',
+				'id' => 'go_minutes',
+				'title' => '<div id="go_admin_bar_minutes">' .
+					go_display_longhand_currency(
+						'minutes',
+						$go_current_minutes
+					) .
+					'</div>',
 				'href' => '#',
 				'parent' => 'go_info',
 			) 
@@ -117,71 +181,114 @@ function go_admin_bar () {
 		if ( current_user_can( 'manage_options' ) ) {
 			$wp_admin_bar->add_node( 
 				array(
+					'id' => 'go_deactivate',
 					'title' => '<input type="button" id="go_admin_bar_deactivation" name="go_admin_bar_deactivation" value="Deactivate" onclick="go_deactivate_plugin()"/>',
 					'parent'=>'go_info'
 				) 
 			);
 		}
 		
-		if ( go_return_options( 'go_admin_bar_add_switch' ) == 'On' ) {	
-			
+		if ( go_return_options( 'go_admin_bar_add_switch' ) == 'On' ) {		
 			$wp_admin_bar->add_node( 
 				array(
+					'id' => 'go_add',
 					'title' => 'Add',
 					'href' => '#',
-					'id' => 'go_add',
 				) 
 			);
-			
-			if ( go_return_options( 'go_admin_bar_add_minutes_switch' ) != 'On' || $role === 'administrator' ) {
-			
-				$wp_admin_bar->add_node( 
-					array(
-						'title' => 
-						'<div id="go_admin_bar_title">'.go_return_options( 'go_points_name' ).'</div>
-						<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_points" id="go_admin_bar_points_points"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_points_reason"/></div>
-						<div id="go_admin_bar_title">'.go_return_options( 'go_currency_name' ).'</div>
-						<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_points" id="go_admin_bar_currency_points"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_currency_reason"/></div>
-						<div id="go_admin_bar_title">'.go_return_options( 'go_bonus_currency_name' ).'</div>
-						<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_points" id="go_admin_bar_bonus_currency_points"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_bonus_currency_reason"/></div>
-						<div id="go_admin_bar_title">'.go_return_options( 'go_penalty_name' ).'</div>
-						<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_points" id="go_admin_bar_penalty_points"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_penalty_reason"/></div>
-						<div id="go_admin_bar_title">'.go_return_options( 'go_minutes_name' ).'</div>
-						<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_points" id="go_admin_bar_minutes_points"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_minutes_reason"/></div>
-						<div><input id="go_admin_bar_add_button" type="button" style="width:250px; height: 20px;margin-top: 7px;" name="go_admin_bar_submit" onclick="go_admin_bar_add();this.disabled = true;" value="Add"><div id="admin_bar_add_return"></div></div>',
-						'href' => false,
-						'parent' => 'go_add'
-					) 
-				);
-				
+			$title = '';
+			if ( ! $is_admin ) {
+				if ( go_return_options( 'go_bar_add_points_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_points_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_points"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_points_reason"/></div>';
+				}
+				if ( go_return_options( 'go_bar_add_currency_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_currency_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_currency"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_currency_reason"/></div>';
+				}
+				if ( go_return_options( 'go_bar_add_bonus_currency_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_bonus_currency_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_bonus_currency"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_bonus_currency_reason"/></div>';
+				}
+				if ( go_return_options( 'go_bar_add_penalty_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_penalty_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_penalty"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_penalty_reason"/></div>';
+				}
+				if ( go_return_options( 'go_bar_add_minutes_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_minutes_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_minutes"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_minutes_reason"/></div>';
+				}
+				if ( go_return_options( 'go_bar_add_points_switch' ) == 'On' || go_return_options( 'go_bar_add_currency_switch' ) == 'On' || go_return_options( 'go_bar_add_bonus_currency_switch' ) == 'On' || go_return_options( 'go_bar_add_penalty_switch' ) == 'On' || go_return_options( 'go_bar_add_minutes_switch' ) == 'On') {
+					$wp_admin_bar->add_node( 
+						array(
+							'id' => 'go_add_bar',
+							'title' => $title . '
+							<div><button style="width: 252px; margin-top: 10px;" id="go_admin_bar_add_button" name="go_admin_bar_submit" onclick="go_admin_bar_add();this.disabled = true;" value="Add">Add</button><div id="admin_bar_add_return"></div></div>
+							<script type="text/javascript">
+							var height = 80;
+							jQuery(".go_admin_bar_reason").each(function() {
+								height += 60;
+							});
+							jQuery( "ul#wp-admin-bar-go_add-default.ab-submenu" ).css( "height", height );
+							</script>',
+							'href' => false,
+							'parent' => 'go_add'
+						) 
+					);
+				}
 			} else {
-			
-				$wp_admin_bar->add_node( 
-					array(
-						'title' => 
-						'<div id="go_admin_bar_title">'.go_return_options( 'go_minutes_name' ).'</div>
-						<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_points" id="go_admin_bar_minutes_points"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_minutes_reason"/></div>
-						<div><input id="go_admin_bar_add_button" type="button" style="width:250px; height: 20px;margin-top: 7px;" name="go_admin_bar_submit" onclick="go_admin_bar_add();this.disabled = true;" value="Add"><div id="admin_bar_add_return"></div></div>
-						<script type="text/javascript">
-							jQuery( "ul#wp-admin-bar-go_add-default.ab-submenu" ).css( "height", "125px" );
-						</script>',
-						'href' => false,
-						'parent' => 'go_add'
-					) 
-				);
+				if ( go_return_options( 'go_admin_bar_add_points_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_points_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_points"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_points_reason"/></div>';
+				}
+				if ( go_return_options( 'go_admin_bar_add_currency_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_currency_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_currency"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_currency_reason"/></div>';
+				}
+				if ( go_return_options( 'go_admin_bar_add_bonus_currency_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_bonus_currency_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_bonus_currency"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_bonus_currency_reason"/></div>';
+				}
+				if ( go_return_options( 'go_admin_bar_add_penalty_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_penalty_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_penalty"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_penalty_reason"/></div>';
+				}
+				if ( go_return_options( 'go_admin_bar_add_minutes_switch' ) == 'On' ) {
+					$title .=  '<div id="go_admin_bar_title">'.go_return_options( 'go_minutes_name' ).'</div>
+								<div id="go_admin_bar_input"><input type="text" class="go_admin_bar_add_input" id="go_admin_bar_add_minutes"/> For <input type="text" class="go_admin_bar_reason" id="go_admin_bar_add_minutes_reason"/></div>';
+				}
+				if ( go_return_options( 'go_admin_bar_add_points_switch' ) == 'On' || go_return_options( 'go_admin_bar_add_currency_switch' ) == 'On' || go_return_options( 'go_admin_bar_add_bonus_currency_switch' ) == 'On' || go_return_options( 'go_admin_bar_add_penalty_switch' ) == 'On' || go_return_options( 'go_admin_bar_add_minutes_switch' ) == 'On') {
+					$wp_admin_bar->add_node( 
+						array(
+							'id' => 'go_add_bar',
+							'title' => $title . '
+							<div><button style="width: 252px; margin-top: 10px;" id="go_admin_bar_add_button" name="go_admin_bar_submit" onclick="go_admin_bar_add();this.disabled = true;" value="Add">Add</button><div id="admin_bar_add_return"></div></div>
+							<script type="text/javascript">
+							var height = 80;
+							jQuery(".go_admin_bar_reason").each(function() {
+								height += 60;
+							});
+							jQuery( "ul#wp-admin-bar-go_add-default.ab-submenu" ).css( "height", height );
+							</script>',
+							'href' => false,
+							'parent' => 'go_add'
+						) 
+					);
+				}
 			}
 		}
 
 		$wp_admin_bar->add_node( 
 			array(
+				'id' => 'go_stats',
 				'title' => '<div onclick="go_admin_bar_stats_page_button();">Stats</div><div id="go_stats_page"></div>',
 				'href' => '#',
-				'id' => 'go_stats',
 			) 
 		);
 		
 		$wp_admin_bar->add_node( 
 			array(
+				'id' => 'go_task_search',
 				'title' => '
 					<form role="search" method="get" id="go_admin_bar_task_search_form" class="searchform" action="'.home_url( '/' ).'">
 						<div><label class="screen-reader-text" for="s">'.__( 'Search for:' ).'</label>
@@ -190,7 +297,6 @@ function go_admin_bar () {
 							<input type="submit" id="go_admin_bar_task_search_submit" value="'.esc_attr__( 'Search' ).'"/>
 						</div>
 					</form>',
-				'id' => 'go_task_search'
 			) 
 		);
 		
@@ -203,8 +309,14 @@ function go_admin_bar () {
 				) 
 			);
 
+			/*
+			 * Game On Links
+			 */
+
+			// displays Clipboard link
 			$wp_admin_bar->add_node(
 				array(
+					'id' => 'go_nav_clipboard',
 					'title' => 'Clipboard',
 					'href' => get_admin_url().'admin.php?page=go_clipboard',
 					'parent' => 'go_site_name_menu',
@@ -212,8 +324,10 @@ function go_admin_bar () {
 				) 
 			);
 
+			// displays Task edit page link
 			$wp_admin_bar->add_node(
 				array(
+					'id' => 'go_nav_tasks',
 					'title' => get_option( 'go_tasks_plural_name' ),
 					'href' => get_admin_url().'edit.php?post_type=tasks',
 					'parent' => 'go_site_name_menu',
@@ -221,8 +335,10 @@ function go_admin_bar () {
 				) 
 			);
 
+			// displays Store Item edit page link
 			$wp_admin_bar->add_node(
 				array(
+					'id' => 'go_nav_store',
 					'title' => get_option( 'go_store_name' ),
 					'href' => get_admin_url().'edit.php?post_type=go_store',
 					'parent' => 'go_site_name_menu',
@@ -230,8 +346,10 @@ function go_admin_bar () {
 				) 
 			);
 
+			// displays GO options page link
 			$wp_admin_bar->add_node(
 				array(
+					'id' => 'go_nav_options',
 					'title' => 'Game-On',
 					'href' => get_admin_url().'admin.php?page=game-on-options.php',
 					'parent' => 'go_site_name_menu',
@@ -239,15 +357,73 @@ function go_admin_bar () {
 				) 
 			);
 
+			// displays Pods page link
 			$wp_admin_bar->add_node(
 				array(
-					'title' => 'Plugins',
-					'href' => get_admin_url().'plugins.php',
+					'id' => 'go_nav_pods',
+					'title' => get_option('go_tasks_name').' Pods',
+					'href' => esc_url( get_admin_url() ).'admin.php?page=go_pods',
+					'parent' => 'go_site_name_menu',
+					'meta' => array( 'class' => 'go_site_name_menu_item' )
+				)
+			);
+
+			/*
+			 * Default WP Links
+			 */
+
+			// displays Post edit page link
+			$wp_admin_bar->add_node(
+				array(
+					'id' => 'go_nav_posts',
+					'title' => 'Posts',
+					'href' => esc_url( get_admin_url() ).'edit.php',
 					'parent' => 'appearance'
 				) 
 			);
+
+			// displays Page edit page link
+			$wp_admin_bar->add_node(
+				array(
+					'id' => 'go_nav_pages',
+					'title' => 'Pages',
+					'href' => esc_url( get_admin_url() ).'edit.php?post_type=page',
+					'parent' => 'appearance'
+				) 
+			);
+
+			// displays Media Library page link
+			$wp_admin_bar->add_node(
+				array(
+					'id' => 'go_nav_media',
+					'title' => 'Media',
+					'href' => esc_url( get_admin_url() ).'upload.php',
+					'parent' => 'appearance'
+				) 
+			);
+
+			// displays Plugins page link
+			$wp_admin_bar->add_node(
+				array(
+					'id' => 'go_nav_plugins',
+					'title' => 'Plugins',
+					'href' => esc_url( get_admin_url() ).'plugins.php',
+					'parent' => 'appearance'
+				) 
+			);
+
+			// displays Users page link
+			$wp_admin_bar->add_node(
+				array(
+					'id' => 'go_nav_users',
+					'title' => 'Users',
+					'href' => esc_url( get_admin_url() ).'users.php',
+					'parent' => 'appearance',
+				)
+			);
 		}
-		echo $ranks_output;
+
+	// end-if the admin bar is turned on and the user is logged in
 	}
 }
 

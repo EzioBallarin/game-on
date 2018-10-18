@@ -1,3 +1,11 @@
+.go_align_right {
+	text-align: right;
+}
+
+.go_align_center {
+	text-align: center;
+}
+
 .go_notification {
 	text-align: center;
 	line-height: 60px;
@@ -16,6 +24,32 @@
 	z-index: 9999999;
 }
 
+.go_error {
+	padding: 5px 0 5px 0;
+}
+
+.go_error_red, .go_error {
+	color: red;
+}
+
+span.go_loading {
+	background-image: url("images/ajax-loader.gif");
+	width: 16px;
+	height: 16px;
+	display: inline-block;
+	vertical-align: middle;
+	margin-right: 5px;
+}
+
+input[type='text'].go_error_red {
+	border: 2px solid red;
+	outline: none;
+}
+
+.go_no_scroll {
+	overflow: hidden;
+}
+
 /********************
 *	Admin-Bar Styles
 ********************/
@@ -31,20 +65,24 @@
 	margin: 0px !important;
 }
 
-#go_admin_bar_progress_bar_border {
+#wp-admin-bar-go_info > a > div {
 	height: 16px;
 	width: 120px;
-	border: thin white solid;
-	-moz-border-radius: 2em 2em 2em 2em;
-	margin-top: 2px;
 }
 
-#go_admin_bar_hitpoint_bar_border {
-	height: 16px;
-    width: 120px;
-    border: 1px white solid;
-    -moz-border-radius: 2em 2em 2em 2em;
-    border-radius: 2em 2em 2em 2em;
+#go_admin_bar_progress_bar_border {
+	height: 100%;
+	width: 100%;
+	border: thin white solid;
+	margin-top: 2px;
+	position: relative;
+}
+
+#go_admin_bar_progress_bar {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100% !important;
 }
 
 #go_admin_bar_title {
@@ -55,7 +93,12 @@
 	width: 250px;
 }
 
-.go_admin_bar_points {
+#go_admin_bar_rank {
+	font-size: 1.2em;
+	color: #eee;
+}
+
+.go_admin_bar_add_input {
 	width: 50px !important;
 }
 
@@ -67,22 +110,35 @@ ul#wp-admin-bar-go_add-default.ab-submenu {
 	height: 380px;
 }
 
+#points_needed_to_level_up {
+	position: absolute;
+	width: 100% !important;
+	height: 100% !important;
+	line-height: initial !important;
+	overflow: hidden;
+}
+
 #points_needed_to_level_up:hover {
 	color: white;
 }
 
 .go_admin_bar_text {
-	position: absolute !important;
-	width: inherit !important;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
 	text-align: center !important;
-	height: inherit !important;
-	margin-top: -8px !important;
 	color: white;
 	text-shadow: 0px 0px #ff6600;
+	word-break: break-all;
 }
 
 .progress_bar {
-	height: 16px !important;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
 	background-color: #39b54a;
 }
 
@@ -111,10 +167,6 @@ ul#wp-admin-bar-go_add-default.ab-submenu {
 
 #go_admin_bar_task_search_submit {
 	height: 24px;
-	/* padding-bottom: 2px; */
-	/* padding-top: 0; */
-	/* padding-left: 5px; */
-	/* padding-right: 5px; */
 	margin-bottom: 3px;
 	font-size: 10px;
 	line-height: 24px;
@@ -137,6 +189,15 @@ input[name="go_admin_bar_submit"] {
 	height: 25px;
 	line-height: 10px;
 	width: 70px;
+}
+
+#wp-admin-bar-go_toolbar_login {
+	display: inline !important;
+	padding: 0 8px 0 7px !important;
+}
+
+#wp-admin-bar-go_toolbar_login a {
+	padding: 0 8px 0 7px !important;
 }
 
 /********************
@@ -206,7 +267,7 @@ input.go_store_cost_input::-webkit-input-placeholder,
 input.go_store_filter_input::-webkit-input-placeholder,
 input#go_store_item_url_input::-webkit-input-placeholder,
 input#go_store_badge_id_input::-webkit-input-placeholder,
-input.go_store_exchange_input::-webkit-input-placeholder {
+input.go_store_gift_input::-webkit-input-placeholder {
 	padding-top: 2px;
 }
 
@@ -215,7 +276,7 @@ input.go_store_cost_input,
 input.go_store_filter_input,
 input#go_store_item_url_input,
 input#go_store_badge_id_input,
-input.go_store_exchange_input {
+input.go_store_gift_input {
 	margin-top: 0px;
 	margin-bottom: 0px;
 }
@@ -232,7 +293,7 @@ input#go_store_item_url_input {
 	width: 50%;
 }
 
-input.go_store_exchange_input[type="text"] {
+input.go_store_gift_input[type="text"] {
 	display: none;
 	width: 21.7%;
 }
@@ -254,14 +315,6 @@ div.misc-pub-section-clone {
 
 input#go-button-clone {
 	margin-bottom: 7px !important;
-}
-
-input.go_test_field_add {
-	color: green;
-}
-
-input.go_test_field_rm {
-	color: red;
 }
 
 .go_sortable {
@@ -330,17 +383,9 @@ input.go_test_field_rm {
 	margin: auto;
 }
 
-.down {
+.go_task_settings_accordion.opened .go_task_accordion_triangle {
 	border-top: none;
 	border-bottom: 5px solid #AAA;
-}
-
-#go_task_order_in_chain {
-	margin: 0;
-}
-
-#go_mta_final_chain_message {
-	width: 100%;
 }
 
 .go_reward_input {
@@ -413,14 +458,12 @@ input.go_test_field_rm {
 	margin: 0 0 4px -2px !important;
 }
 
-.go_test_field_add {
+.go_button_add_field, .go_test_field_add {
 	color: green;
-	font-size: 250%;
 }
 
-.go_test_field_rm {
+.go_button_del_field, .go_test_field_rm {
 	color: red;
-	font-size: 250%;
 	margin-left: 5px;
 }
 
@@ -434,7 +477,7 @@ input.go_test_field_rm {
 }
 
 .go_stage_badge_container {
-	display: inline-block;
+	list-style: none;
 }
 
 .go_badge_input {
@@ -461,6 +504,61 @@ input.go_current {
 #go_task_timer {
 	color: red;
 	font-weight: bold;
+}
+
+div.pod_unfinished,
+div.pod_finished {
+	border-style: solid;
+	border-width: 2px;
+	border-radius: 3px;
+	border-color: #ACACAC;
+	background-color: white;
+}
+
+div.pod_unfinished {
+	border-bottom-color: red;
+}
+
+div.pod_finished {
+	border-bottom-color: green;
+}
+
+a.pod_link {
+	font-size: 1.5em;
+	text-decoration: none !important;
+	display: block;
+	width: 100%;
+	height: 100%;
+	padding: 5px 0px 5px 5px;
+	z-index: 10;
+}
+
+.pod_finished:hover,
+.pod_unfinished:hover {
+	background-color: #eee;
+}
+
+#go_bonus_loot_checkbox {
+	display: block;
+}
+
+ul#go_bonus_loot_wrap {
+	list-style: none;
+	margin-top: 15px;
+	margin-bottom: 0;
+}
+
+ul#go_bonus_loot_wrap li {
+	margin-bottom: 10px;
+}
+
+ul#go_bonus_loot_wrap li.go_error {
+	padding: 0;
+	margin-top: 15px;
+}
+
+.go_bonus_loot_rarity {
+	width: 50px;
 }
 
 /* Tasks Style | Front-end */
@@ -516,7 +614,24 @@ input.go_current {
 	padding: 0px !important;
 }
 
-.go_chain_message {
+.go_chain_msg_container {
+	margin-top: 20px;
+}
+
+.go_chain_final_msg {
+	margin: 10px 0;
+	text-align: center;
+}
+
+.go_chain_title {
+	font-weight: 900;
+}
+
+.go_chain_links {
+	text-align: center;
+}
+
+div.go_pod_message {
 	margin-top: 10px;
 }
 
