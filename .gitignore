@@ -1,1 +1,6 @@
+.idea
 go_definitions.php
+bower_components
+bower.json
+not_loaded
+.DS_Store
