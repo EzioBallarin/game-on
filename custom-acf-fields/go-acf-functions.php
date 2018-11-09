@@ -10,47 +10,6 @@
 /**
  * @param $field
  * @return mixed
- * Loads the class periods/sections from the options page in various ACF fields
-
-
-function acf_load_section_choices( $field ) {
-
-    // reset choices
-    $field['choices'] = array();
-    $field['choices'][ null ] = "Select";
-
-
-    // if has rows
-    if( have_rows('go_sections', 'option') ) {
-
-        // while has rows
-        while( have_rows('go_sections', 'option') ) {
-
-            // instantiate row
-            the_row();
-
-            // vars
-            $value = get_sub_field('section');
-
-            // append to choices
-            $field['choices'][ $value ] = $value;
-
-        }
-    }
-    // return the field
-    return $field;
-
-}
-
-add_filter('acf/load_field/name=lock_sections', 'acf_load_section_choices');
-add_filter('acf/load_field/name=user-section', 'acf_load_section_choices');
-add_filter('acf/load_field/name=sched_sections', 'acf_load_section_choices');
- */
-
-
-/**
- * @param $field
- * @return mixed
  * Loads the seating chart from the options page in various ACF fields
  */
 
@@ -78,32 +37,6 @@ function acf_load_seat_choices( $field ) {
 
         }
     }
-
-    /*
-    // if has rows
-    if( have_rows('go_seats', 'option') ) {
-
-        // while has rows
-        while( have_rows('go_seats', 'option') ) {
-
-            // instantiate row
-            the_row();
-
-
-            // vars
-            $value = get_sub_field('seat');
-            //$label = get_sub_field('label');
-
-
-            // append to choices
-            $field['choices'][ $value ] = $value;
-
-        }
-
-    }
-    */
-
-
     // return the field
     return $field;
 
@@ -233,20 +166,6 @@ function acf_update_order($post_id ) {
 
     }
 
-    // top menu
-    $order_field = 'go-location_top_order';
-    $item_order_field = 'go-location_top_order_item';
-    $toggle = get_post_meta ($post_id, 'go-location_top_toggle', true);
-    $term = get_post_meta ($post_id, 'go-location_top_menu', true);
-    go_update_order($post_id, $order_field, $item_order_field, $toggle, $term);
-
-    // side widget
-    $order_field = 'go-location_side_order';
-    $item_order_field = 'go-location_side_order_item';
-    $toggle = get_post_meta ($post_id, 'go-location_side_toggle', true);
-    $term = get_post_meta ($post_id, 'go-location_side_menu', true);
-    go_update_order($post_id, $order_field, $item_order_field, $toggle, $term);
-
     $order_field = 'go-location_map_order';
     $item_order_field = 'go-location_map_order_item';
     $toggle = get_post_meta ($post_id, 'go-location_map_toggle', true);
@@ -277,16 +196,12 @@ function default_value_field_5b526d2e7957e($value, $post_id, $field) {
                 $title = get_option($title);
                 $message = "options_go_loot_bonus_loot_" . $i . "_message";
                 $message = get_option($message);
-                $mods_toggle = "options_go_loot_bonus_loot_" . $i . "_mods_toggle";
-                $mods_toggle = get_option($mods_toggle);
                 $xp = "options_go_loot_bonus_loot_" . $i . "_defaults_xp";
                 $xp = get_option($xp);
                 $gold = "options_go_loot_bonus_loot_" . $i . "_defaults_gold";
                 $gold = get_option($gold);
                 $health = "options_go_loot_bonus_loot_" . $i . "_defaults_health";
                 $health = get_option($health);
-                $c4 = "options_go_loot_bonus_loot_" . $i . "_defaults_c4";
-                $c4 = get_option($c4);
                 $drop = "options_go_loot_bonus_loot_" . $i . "_defaults_drop_rate";
                 $drop = get_option($drop);
 
@@ -294,13 +209,11 @@ function default_value_field_5b526d2e7957e($value, $post_id, $field) {
                     'field_5b526d2e79583' => $xp,
                     'field_5b526d2e79584' => $gold ,
                     'field_5b526d2e79585' => $health,
-                    'field_5b526d2e79586' => $c4,
                     'field_5b526d2e79588' => $drop
                 );
                 $row_val = array(
                     'field_5b526d2e7957f' => $title,
                     'field_5b526d2e79580' => $message,
-                    'field_5b526d2e79581' => $mods_toggle,
                     'field_5b526d2e79582' => $loot_val
                 );
 
@@ -314,49 +227,6 @@ function default_value_field_5b526d2e7957e($value, $post_id, $field) {
 }
 add_filter('acf/load_value/key=field_5b526d2e7957e', 'default_value_field_5b526d2e7957e', 10, 3);
 
-/*
-function default_value_field_5b526d2e79582($value, $post_id, $field) {
-    if ($value === false) {
-        $row_count = get_option('options_go_loot_bonus_loot');
-        $value = array();
-        if(!empty($row_count)){
-            for ($i = 0; $i < $row_count; $i++) {
-                $title = "options_go_loot_bonus_loot_" . $i . "_title";
-                $title = get_option($title);
-                $message = "options_go_loot_bonus_loot_" . $i . "_message";
-                $message = get_option($message);
-                $mods_toggle = "options_go_loot_bonus_loot_" . $i . "_mods_toggle";
-                $mods_toggle = get_option($mods_toggle);
-                $xp = "options_go_loot_bonus_loot_" . $i . "_defaults_xp";
-                $xp = get_option($xp);
-                $gold = "options_go_loot_bonus_loot_" . $i . "_defaults_gold";
-                $gold = get_option($gold);
-                $health = "options_go_loot_bonus_loot_" . $i . "_defaults_health";
-                $health = get_option($health);
-                $c4 = "options_go_loot_bonus_loot_" . $i . "_defaults_c4";
-                $c4 = get_option($c4);
-                $drop = "options_go_loot_bonus_loot_" . $i . "_defaults_drop_rate";
-                $drop = get_option($drop);
-
-                $row_val = array(
-                    'field_5b4ebb3195f8f' => '',
-                    'field_5aafc60ede155' => $xp,
-                    'field_5aafc60ede154' => $gold ,
-                    'field_5aafc60ede156' => $health,
-                    'field_5b00f8a0b9e83' => $c4,
-                    'field_5aafc60ede157' => $drop);
-
-                $value[] = $row_val;
-
-            }
-
-        }
-    }
-    return $value;
-}
-
-add_filter('acf/load_value/key=field_5b526d2e79582', 'default_value_field_5b526d2e79582', 10, 3);
-*/
 
 
 
