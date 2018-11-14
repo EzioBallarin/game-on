@@ -5,10 +5,10 @@ Plugin URI: http://maclab.guhsd.net/game-on
 Description: Gamification tools for teachers.
 Author: Valhalla Mac Lab
 Author URI: https://github.com/TheMacLab/game-on/blob/master/README.md
-Version: 4.23
+Version: 4.25
 */
 
-$go_js_version = 4.23;
+$go_js_version = 4.25;
 global $go_js_version;
 
 $go_css_version = 4.23;
@@ -107,6 +107,7 @@ if ( !is_admin() ) { //IF PUBLIC FACING PAGE
 
     //in the admin/ajax directory
     include_once('src/admin/ajax/go_clipboard.php');
+    include_once('src/admin/ajax/go_store_make_html.php');
 
     //in the ajax directory
     include_once('src/ajax/go_admin_ajax.php');
@@ -146,6 +147,7 @@ if ( !is_admin() ) { //IF PUBLIC FACING PAGE
     add_action( 'wp_ajax_go_stats_badges_list', 'go_stats_badges_list' ); //OK
     add_action( 'wp_ajax_go_stats_groups_list', 'go_stats_groups_list' ); //OK
     add_action( 'wp_ajax_go_stats_leaderboard', 'go_stats_leaderboard' ); //OK
+    add_action( 'wp_ajax_go_stats_leaderboard_dataloader_ajax', 'go_stats_leaderboard_dataloader_ajax');
     add_action( 'wp_ajax_go_stats_lite', 'go_stats_lite' ); //OK
     add_action( 'wp_ajax_go_stats_about', 'go_stats_about' ); //OK
     add_action( 'wp_ajax_go_activity_dataloader_ajax', 'go_activity_dataloader_ajax');
@@ -161,10 +163,13 @@ if ( !is_admin() ) { //IF PUBLIC FACING PAGE
     add_action( 'wp_ajax_go_the_lb_ajax', 'go_the_lb_ajax' ); //OK
     add_action( 'wp_ajax_nopriv_go_the_lb_ajax', 'go_the_lb_ajax' ); //OK
     //Clipboard
-    add_action( 'wp_ajax_go_clipboard_intable', 'go_clipboard_intable' ); //OK
-    add_action( 'wp_ajax_go_clipboard_intable_activity', 'go_clipboard_intable_activity' ); //OK
-    add_action( 'wp_ajax_go_clipboard_notifications', 'go_clipboard_notifications' ); //OK
-    add_action( 'wp_ajax_go_clipboard_notifications_dataloader_ajax', 'go_clipboard_notifications_dataloader_ajax' ); //OK
+    add_action( 'wp_ajax_go_clipboard_stats', 'go_clipboard_stats' ); //OK
+    add_action( 'wp_ajax_go_clipboard_activity', 'go_clipboard_activity' ); //OK
+    add_action( 'wp_ajax_go_clipboard_messages', 'go_clipboard_messages' ); //OK
+    add_action( 'wp_ajax_go_clipboard_store', 'go_clipboard_store' ); //OK
+    add_action( 'wp_ajax_go_clipboard_stats_dataloader_ajax', 'go_clipboard_stats_dataloader_ajax' ); //OK
+    add_action( 'wp_ajax_go_clipboard_messages_dataloader_ajax', 'go_clipboard_messages_dataloader_ajax' ); //OK
+    add_action( 'wp_ajax_go_clipboard_store_dataloader_ajax', 'go_clipboard_store_dataloader_ajax' ); //OK
     add_action( 'wp_ajax_go_clipboard_save_filters', 'go_clipboard_save_filters' ); //OK
     //Messages
     add_action( 'wp_ajax_go_create_admin_message', 'go_create_admin_message' );//OK
@@ -193,7 +198,6 @@ if ( !is_admin() ) { //IF PUBLIC FACING PAGE
     include_once('src/admin/go_datatable.php');
     include_once('src/admin/go_shortcodes_button.php');
     include_once('src/admin/go_store_admin.php');
-    include_once('src/admin/go_store_make_html.php');
     include_once('src/admin/go_task_admin.php');
     include_once('src/admin/go_user_bio.php');
 
